@@ -27,6 +27,7 @@
     "port": 8000
   },
   "scripts": {
+    "compile": "rc-tools run watch --out-dir=/lib",
     "build": "rc-tools run build",
     "gh-pages": "rc-tools run gh-pages",
     "start": "rc-server",
