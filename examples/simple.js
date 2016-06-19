@@ -23,24 +23,27 @@ webpackJsonp([0,1],[
 	  getInitialState: function getInitialState() {
 	    return {
 	      percent: 30,
-	      color: "#3FC7FA"
+	      color: '#3FC7FA'
 	    };
 	  },
 	  changeState: function changeState() {
-	    var colorMap = ["#3FC7FA", "#85D262", "#FE8C6A"];
+	    var colorMap = ['#3FC7FA', '#85D262', '#FE8C6A'];
 	    this.setState({
-	      percent: parseInt(Math.random() * 100),
-	      color: colorMap[parseInt(Math.random() * 3)]
+	      percent: parseInt(Math.random() * 100, 10),
+	      color: colorMap[parseInt(Math.random() * 3, 10)]
 	    });
 	  },
 	  render: function render() {
 	    var containerStyle = {
-	      "width": "250px"
+	      width: '250px'
 	    };
 	    var circleContainerStyle = {
-	      "width": "250px",
-	      "height": "250px"
+	      width: '250px',
+	      height: '250px'
 	    };
+	
+	    var transition = 'stroke-dashoffset 2.2s ease 0s, stroke 0.6s ease';
+	
 	    return React.createElement(
 	      'div',
 	      null,
@@ -54,7 +57,11 @@ webpackJsonp([0,1],[
 	      React.createElement(
 	        'div',
 	        { style: containerStyle },
-	        React.createElement(Line, { percent: this.state.percent, strokeWidth: '4', strokeColor: this.state.color })
+	        React.createElement(Line, { percent: this.state.percent,
+	          strokeWidth: '4',
+	          transition: transition,
+	          strokeLinecap: 'butt',
+	          strokeColor: this.state.color })
 	      ),
 	      React.createElement(
 	        'h3',
@@ -128,9 +135,10 @@ webpackJsonp([0,1],[
 	    var pathStyle = {
 	      'strokeDasharray': len + 'px ' + len + 'px',
 	      'strokeDashoffset': (100 - props.percent) / 100 * len + 'px',
-	      'transition': 'stroke-dashoffset 0.6s ease 0s, stroke 0.6s ease'
+	      'transition': props.transition ? props.transition : defaultProps.transition
 	    };
-	    ['strokeWidth', 'strokeColor', 'trailWidth', 'trailColor'].forEach(function (item) {
+	
+	    ['strokeWidth', 'strokeColor', 'trailWidth', 'trailColor', 'strokeLinecap'].forEach(function (item) {
 	      if (item === 'trailWidth' && !props.trailWidth && props.strokeWidth) {
 	        props.trailWidth = props.strokeWidth;
 	        return;
@@ -145,7 +153,7 @@ webpackJsonp([0,1],[
 	      { className: 'rc-progress-circle', viewBox: '0 0 100 100' },
 	      React.createElement('path', { className: 'rc-progress-circle-trail', d: pathString, stroke: props.trailColor,
 	        strokeWidth: props.trailWidth, fillOpacity: '0' }),
-	      React.createElement('path', { className: 'rc-progress-circle-path', d: pathString, strokeLinecap: 'round',
+	      React.createElement('path', { className: 'rc-progress-circle-path', d: pathString, strokeLinecap: props.strokeLinecap,
 	        stroke: props.strokeColor, strokeWidth: props.strokeWidth, fillOpacity: '0', style: pathStyle })
 	    );
 	  }
@@ -160,8 +168,8 @@ webpackJsonp([0,1],[
 /* 6 */
 /***/ function(module, exports) {
 
-	/* eslint-disable no-unused-vars */
 	'use strict';
+	/* eslint-disable no-unused-vars */
 	var hasOwnProperty = Object.prototype.hasOwnProperty;
 	var propIsEnumerable = Object.prototype.propertyIsEnumerable;
 	
@@ -173,7 +181,51 @@ webpackJsonp([0,1],[
 		return Object(val);
 	}
 	
-	module.exports = Object.assign || function (target, source) {
+	function shouldUseNative() {
+		try {
+			if (!Object.assign) {
+				return false;
+			}
+	
+			// Detect buggy property enumeration order in older V8 versions.
+	
+			// https://bugs.chromium.org/p/v8/issues/detail?id=4118
+			var test1 = new String('abc');  // eslint-disable-line
+			test1[5] = 'de';
+			if (Object.getOwnPropertyNames(test1)[0] === '5') {
+				return false;
+			}
+	
+			// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+			var test2 = {};
+			for (var i = 0; i < 10; i++) {
+				test2['_' + String.fromCharCode(i)] = i;
+			}
+			var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+				return test2[n];
+			});
+			if (order2.join('') !== '0123456789') {
+				return false;
+			}
+	
+			// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+			var test3 = {};
+			'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+				test3[letter] = letter;
+			});
+			if (Object.keys(Object.assign({}, test3)).join('') !==
+					'abcdefghijklmnopqrst') {
+				return false;
+			}
+	
+			return true;
+		} catch (e) {
+			// We don't expect any of the above to throw, but better to be safe.
+			return false;
+		}
+	}
+	
+	module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 		var from;
 		var to = toObject(target);
 		var symbols;
@@ -251,6 +303,7 @@ webpackJsonp([0,1],[
 	});
 	
 	React.__SECRET_DOM_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = ReactDOM;
+	React.__SECRET_DOM_SERVER_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = ReactDOMServer;
 	
 	module.exports = React;
 
@@ -359,12 +412,40 @@ webpackJsonp([0,1],[
 	// shim for using process in browser
 	
 	var process = module.exports = {};
+	
+	// cached from whatever global is present so that test runners that stub it
+	// don't break things.  But we need to wrap it in a try catch in case it is
+	// wrapped in strict mode code which doesn't define any globals.  It's inside a
+	// function because try/catches deoptimize in certain engines.
+	
+	var cachedSetTimeout;
+	var cachedClearTimeout;
+	
+	(function () {
+	  try {
+	    cachedSetTimeout = setTimeout;
+	  } catch (e) {
+	    cachedSetTimeout = function () {
+	      throw new Error('setTimeout is not defined');
+	    }
+	  }
+	  try {
+	    cachedClearTimeout = clearTimeout;
+	  } catch (e) {
+	    cachedClearTimeout = function () {
+	      throw new Error('clearTimeout is not defined');
+	    }
+	  }
+	} ())
 	var queue = [];
 	var draining = false;
 	var currentQueue;
 	var queueIndex = -1;
 	
 	function cleanUpNextTick() {
+	    if (!draining || !currentQueue) {
+	        return;
+	    }
 	    draining = false;
 	    if (currentQueue.length) {
 	        queue = currentQueue.concat(queue);
@@ -380,7 +461,7 @@ webpackJsonp([0,1],[
 	    if (draining) {
 	        return;
 	    }
-	    var timeout = setTimeout(cleanUpNextTick);
+	    var timeout = cachedSetTimeout(cleanUpNextTick);
 	    draining = true;
 	
 	    var len = queue.length;
@@ -397,7 +478,7 @@ webpackJsonp([0,1],[
 	    }
 	    currentQueue = null;
 	    draining = false;
-	    clearTimeout(timeout);
+	    cachedClearTimeout(timeout);
 	}
 	
 	process.nextTick = function (fun) {
@@ -409,7 +490,7 @@ webpackJsonp([0,1],[
 	    }
 	    queue.push(new Item(fun, args));
 	    if (queue.length === 1 && !draining) {
-	        setTimeout(drainQueue, 0);
+	        cachedSetTimeout(drainQueue, 0);
 	    }
 	};
 	
@@ -1215,7 +1296,7 @@ webpackJsonp([0,1],[
 	 * will remain to ensure logic does not differ in production.
 	 */
 	
-	var invariant = function (condition, format, a, b, c, d, e, f) {
+	function invariant(condition, format, a, b, c, d, e, f) {
 	  if (process.env.NODE_ENV !== 'production') {
 	    if (format === undefined) {
 	      throw new Error('invariant requires an error message argument');
@@ -1229,15 +1310,16 @@ webpackJsonp([0,1],[
 	    } else {
 	      var args = [a, b, c, d, e, f];
 	      var argIndex = 0;
-	      error = new Error('Invariant Violation: ' + format.replace(/%s/g, function () {
+	      error = new Error(format.replace(/%s/g, function () {
 	        return args[argIndex++];
 	      }));
+	      error.name = 'Invariant Violation';
 	    }
 	
 	    error.framesToPop = 1; // we don't care about invariant's own frame
 	    throw error;
 	  }
-	};
+	}
 	
 	module.exports = invariant;
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(10)))
@@ -8098,6 +8180,10 @@ webpackJsonp([0,1],[
 	  }
 	};
 	
+	function registerNullComponentID() {
+	  ReactEmptyComponentRegistry.registerNullComponentID(this._rootNodeID);
+	}
+	
 	var ReactEmptyComponent = function (instantiate) {
 	  this._currentElement = null;
 	  this._rootNodeID = null;
@@ -8106,7 +8192,7 @@ webpackJsonp([0,1],[
 	assign(ReactEmptyComponent.prototype, {
 	  construct: function (element) {},
 	  mountComponent: function (rootID, transaction, context) {
-	    ReactEmptyComponentRegistry.registerNullComponentID(rootID);
+	    transaction.getReactMountReady().enqueue(registerNullComponentID, this);
 	    this._rootNodeID = rootID;
 	    return ReactReconciler.mountComponent(this._renderedComponent, rootID, transaction, context);
 	  },
@@ -9456,6 +9542,7 @@ webpackJsonp([0,1],[
 	 */
 	var EventInterface = {
 	  type: null,
+	  target: null,
 	  // currentTarget is set when dispatching; no use in copying it here
 	  currentTarget: emptyFunction.thatReturnsNull,
 	  eventPhase: null,
@@ -9489,8 +9576,6 @@ webpackJsonp([0,1],[
 	  this.dispatchConfig = dispatchConfig;
 	  this.dispatchMarker = dispatchMarker;
 	  this.nativeEvent = nativeEvent;
-	  this.target = nativeEventTarget;
-	  this.currentTarget = nativeEventTarget;
 	
 	  var Interface = this.constructor.Interface;
 	  for (var propName in Interface) {
@@ -9501,7 +9586,11 @@ webpackJsonp([0,1],[
 	    if (normalize) {
 	      this[propName] = normalize(nativeEvent);
 	    } else {
-	      this[propName] = nativeEvent[propName];
+	      if (propName === 'target') {
+	        this.target = nativeEventTarget;
+	      } else {
+	        this[propName] = nativeEvent[propName];
+	      }
 	    }
 	  }
 	
@@ -10601,6 +10690,7 @@ webpackJsonp([0,1],[
 	    multiple: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
 	    muted: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
 	    name: null,
+	    nonce: MUST_USE_ATTRIBUTE,
 	    noValidate: HAS_BOOLEAN_VALUE,
 	    open: HAS_BOOLEAN_VALUE,
 	    optimum: null,
@@ -10612,6 +10702,7 @@ webpackJsonp([0,1],[
 	    readOnly: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
 	    rel: null,
 	    required: HAS_BOOLEAN_VALUE,
+	    reversed: HAS_BOOLEAN_VALUE,
 	    role: MUST_USE_ATTRIBUTE,
 	    rows: MUST_USE_ATTRIBUTE | HAS_POSITIVE_NUMERIC_VALUE,
 	    rowSpan: null,
@@ -10662,8 +10753,8 @@ webpackJsonp([0,1],[
 	     */
 	    // autoCapitalize and autoCorrect are supported in Mobile Safari for
 	    // keyboard hints.
-	    autoCapitalize: null,
-	    autoCorrect: null,
+	    autoCapitalize: MUST_USE_ATTRIBUTE,
+	    autoCorrect: MUST_USE_ATTRIBUTE,
 	    // autoSave allows WebKit/Blink to persist values of input fields on page reloads
 	    autoSave: null,
 	    // color is for Safari mask-icon link
@@ -10694,9 +10785,7 @@ webpackJsonp([0,1],[
 	    httpEquiv: 'http-equiv'
 	  },
 	  DOMPropertyNames: {
-	    autoCapitalize: 'autocapitalize',
 	    autoComplete: 'autocomplete',
-	    autoCorrect: 'autocorrect',
 	    autoFocus: 'autofocus',
 	    autoPlay: 'autoplay',
 	    autoSave: 'autosave',
@@ -13350,7 +13439,10 @@ webpackJsonp([0,1],[
 	      }
 	    });
 	
-	    nativeProps.children = content;
+	    if (content) {
+	      nativeProps.children = content;
+	    }
+	
 	    return nativeProps;
 	  }
 	
@@ -13775,7 +13867,7 @@ webpackJsonp([0,1],[
 	    var value = LinkedValueUtils.getValue(props);
 	
 	    if (value != null) {
-	      updateOptions(this, props, value);
+	      updateOptions(this, Boolean(props.multiple), value);
 	    }
 	  }
 	}
@@ -16810,11 +16902,14 @@ webpackJsonp([0,1],[
 	 * @typechecks
 	 */
 	
+	/* eslint-disable fb-www/typeof-undefined */
+	
 	/**
 	 * Same as document.activeElement but wraps in a try-catch block. In IE it is
 	 * not safe to call document.activeElement if there is nothing focused.
 	 *
-	 * The activeElement will be null only if the document or document body is not yet defined.
+	 * The activeElement will be null only if the document or document body is not
+	 * yet defined.
 	 */
 	'use strict';
 	
@@ -16822,7 +16917,6 @@ webpackJsonp([0,1],[
 	  if (typeof document === 'undefined') {
 	    return null;
 	  }
-	
 	  try {
 	    return document.activeElement || document.body;
 	  } catch (e) {
@@ -18562,7 +18656,9 @@ webpackJsonp([0,1],[
 	  'setValueForProperty': 'update attribute',
 	  'setValueForAttribute': 'update attribute',
 	  'deleteValueForProperty': 'remove attribute',
-	  'dangerouslyReplaceNodeWithMarkupByID': 'replace'
+	  'setValueForStyles': 'update styles',
+	  'replaceNodeWithMarkup': 'replace',
+	  'updateTextContent': 'set textContent'
 	};
 	
 	function getTotalTime(measurements) {
@@ -18754,18 +18850,23 @@ webpackJsonp([0,1],[
 	'use strict';
 	
 	var performance = __webpack_require__(151);
-	var curPerformance = performance;
+	
+	var performanceNow;
 	
 	/**
 	 * Detect if we can use `window.performance.now()` and gracefully fallback to
 	 * `Date.now()` if it doesn't exist. We need to support Firefox < 15 for now
 	 * because of Facebook's testing infrastructure.
 	 */
-	if (!curPerformance || !curPerformance.now) {
-	  curPerformance = Date;
+	if (performance.now) {
+	  performanceNow = function () {
+	    return performance.now();
+	  };
+	} else {
+	  performanceNow = function () {
+	    return Date.now();
+	  };
 	}
-	
-	var performanceNow = curPerformance.now.bind(curPerformance);
 	
 	module.exports = performanceNow;
 
@@ -18814,7 +18915,7 @@ webpackJsonp([0,1],[
 	
 	'use strict';
 	
-	module.exports = '0.14.2';
+	module.exports = '0.14.8';
 
 /***/ },
 /* 153 */
@@ -19786,7 +19887,9 @@ webpackJsonp([0,1],[
 	  strokeWidth: 1,
 	  strokeColor: '#3FC7FA',
 	  trailWidth: 1,
-	  trailColor: '#D9D9D9'
+	  trailColor: '#D9D9D9',
+	  strokeLinecap: 'round',
+	  transition: 'stroke-dashoffset 0.6s ease 0s, stroke 0.6s ease'
 	};
 
 /***/ },
@@ -19807,10 +19910,10 @@ webpackJsonp([0,1],[
 	    var pathStyle = {
 	      'strokeDasharray': '100px, 100px',
 	      'strokeDashoffset': 100 - props.percent + 'px',
-	      'transition': 'stroke-dashoffset 0.6s ease 0s, stroke 0.6s linear'
+	      'transition': props.transition ? props.transition : defaultProps.transition
 	    };
 	
-	    ['strokeWidth', 'strokeColor', 'trailWidth', 'trailColor'].forEach(function (item) {
+	    ['strokeWidth', 'strokeColor', 'trailWidth', 'trailColor', 'strokeLinecap'].forEach(function (item) {
 	      if (item === 'trailWidth' && !props.trailWidth && props.strokeWidth) {
 	        props.trailWidth = props.strokeWidth;
 	        return;
@@ -19833,9 +19936,9 @@ webpackJsonp([0,1],[
 	    return React.createElement(
 	      'svg',
 	      { className: 'rc-progress-line', viewBox: viewBoxString, preserveAspectRatio: 'none' },
-	      React.createElement('path', { className: 'rc-progress-line-trail', d: pathString, strokeLinecap: 'round',
+	      React.createElement('path', { className: 'rc-progress-line-trail', d: pathString, strokeLinecap: props.strokeLinecap,
 	        stroke: props.trailColor, strokeWidth: props.trailWidth, fillOpacity: '0' }),
-	      React.createElement('path', { className: 'rc-progress-line-path', d: pathString, strokeLinecap: 'round',
+	      React.createElement('path', { className: 'rc-progress-line-path', d: pathString, strokeLinecap: props.strokeLinecap,
 	        stroke: props.strokeColor, strokeWidth: props.strokeWidth, fillOpacity: '0', style: pathStyle })
 	    );
 	  }
