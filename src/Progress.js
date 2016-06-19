@@ -15,9 +15,10 @@ const Circle = React.createClass({
     const pathStyle = {
       'strokeDasharray': `${len}px ${len}px`,
       'strokeDashoffset': `${((100 - props.percent) / 100 * len)}px`,
-      'transition': 'stroke-dashoffset 0.6s ease 0s, stroke 0.6s ease',
+      'transition': props.transition ? props.transition : defaultProps.transition,
     };
-    ['strokeWidth', 'strokeColor', 'trailWidth', 'trailColor'].forEach((item) => {
+
+    ['strokeWidth', 'strokeColor', 'trailWidth', 'trailColor', 'strokeLinecap'].forEach((item) => {
       if (item === 'trailWidth' && !props.trailWidth && props.strokeWidth) {
         props.trailWidth = props.strokeWidth;
         return;
@@ -32,7 +33,7 @@ const Circle = React.createClass({
         <path className="rc-progress-circle-trail" d={pathString} stroke={props.trailColor}
               strokeWidth={props.trailWidth} fillOpacity="0"/>
 
-        <path className="rc-progress-circle-path" d={pathString} strokeLinecap="round"
+        <path className="rc-progress-circle-path" d={pathString} strokeLinecap={props.strokeLinecap}
               stroke={props.strokeColor} strokeWidth={props.strokeWidth} fillOpacity="0" style={pathStyle}/>
       </svg>
     );

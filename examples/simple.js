@@ -26,11 +26,18 @@ const Example = React.createClass({
       width: '250px',
       height: '250px',
     };
+
+    const transition = 'stroke-dashoffset 2.2s ease 0s, stroke 0.6s ease';
+
     return (
       <div>
         <h3>Line Progress {this.state.percent}%</h3>
         <div style={containerStyle}>
-          <Line percent={this.state.percent} strokeWidth="4" strokeColor={this.state.color} />
+          <Line percent={this.state.percent}
+                strokeWidth="4"
+                transition={transition}
+                strokeLinecap="butt"
+                strokeColor={this.state.color} />
         </div>
         <h3>Circle Progress {this.state.percent}%</h3>
         <div style={circleContainerStyle}>

@@ -92,6 +92,18 @@ React.render(<div>
           <td>#D9D9D9</td>
           <td> Color for lighter trail stroke underneath the actual progress path.</td>
         </tr>
+        <tr>
+          <td>strokeLinecap</td>
+          <td>String</td>
+          <td>round</td>
+          <td>Stroke line type for progress & trails. </td>
+        </tr>
+        <tr>
+          <td>transition</td>
+          <td>String </td>
+          <td> stroke-dashoffset 0.6s ease 0s, stroke 0.6s ease </td>
+          <td>Stroke transition style </td>
+        </tr>
     </tbody>
 </table>
 

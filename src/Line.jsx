@@ -8,10 +8,10 @@ const Line = React.createClass({
     const pathStyle = {
       'strokeDasharray': '100px, 100px',
       'strokeDashoffset': `${(100 - props.percent)}px`,
-      'transition': 'stroke-dashoffset 0.6s ease 0s, stroke 0.6s linear',
+      'transition': props.transition ? props.transition : defaultProps.transition,
     };
 
-    ['strokeWidth', 'strokeColor', 'trailWidth', 'trailColor'].forEach((item)=> {
+    ['strokeWidth', 'strokeColor', 'trailWidth', 'trailColor', 'strokeLinecap'].forEach((item)=> {
       if (item === 'trailWidth' && !props.trailWidth && props.strokeWidth) {
         props.trailWidth = props.strokeWidth;
         return;
@@ -34,10 +34,10 @@ const Line = React.createClass({
 
     return (
       <svg className="rc-progress-line" viewBox={viewBoxString} preserveAspectRatio="none">
-        <path className="rc-progress-line-trail" d={pathString} strokeLinecap="round"
+        <path className="rc-progress-line-trail" d={pathString} strokeLinecap={props.strokeLinecap}
               stroke={props.trailColor} strokeWidth={props.trailWidth} fillOpacity="0"/>
 
-        <path className="rc-progress-line-path" d={pathString} strokeLinecap="round"
+        <path className="rc-progress-line-path" d={pathString} strokeLinecap={props.strokeLinecap}
               stroke={props.strokeColor} strokeWidth={props.strokeWidth} fillOpacity="0" style={pathStyle}/>
       </svg>
     );
