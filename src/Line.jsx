@@ -29,8 +29,14 @@ const Line = React.createClass({
     const strokeWidth = props.strokeWidth;
     const center = strokeWidth / 2;
     const right = (100 - strokeWidth / 2);
-    const pathString = `M ${center},${center} L ${right},${center}`;
     const viewBoxString = `0 0 100 ${strokeWidth}`;
+    let pathString;
+
+    if (props.strokeLinecap !== 'butt') {
+      pathString = `M ${center},${center} L ${right},${center}`;
+    } else {
+      pathString = `M ${0},${center} L ${100},${center}`;
+    }
 
     return (
       <svg className="rc-progress-line" viewBox={viewBoxString} preserveAspectRatio="none">
